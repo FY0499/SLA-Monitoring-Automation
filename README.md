@@ -2,6 +2,8 @@
 
 I built this n8n workflow to monitor support tickets against their service-level targets, identify tickets that are close to breaching or have already breached the SLA, and notify the team.
 
+<img width="588" height="235" alt="image" src="https://github.com/user-attachments/assets/18ae9bb7-4002-4fb7-b708-bd695193858f" />
+
 ## How it works
 
 1. The workflow checks ticket records in Google Sheets on a schedule.
