@@ -1,0 +1,328 @@
+{
+  "name": "My workflow 10",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {}
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.4,
+      "position": [
+        0,
+        0
+      ],
+      "id": "b4d92500-8520-4563-8fd1-ec72c5a27f8c",
+      "name": "Schedule Trigger"
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1b1gxRTIhWQG_Z5K-jv6GkwmzSHrIb61bmNYqsX5VbKU",
+          "mode": "list",
+          "cachedResultName": "Tickets",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1b1gxRTIhWQG_Z5K-jv6GkwmzSHrIb61bmNYqsX5VbKU/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "الورقة1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1b1gxRTIhWQG_Z5K-jv6GkwmzSHrIb61bmNYqsX5VbKU/edit#gid=0"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        224,
+        0
+      ],
+      "id": "01add1eb-d6f9-400f-a50e-c488b19a05af",
+      "name": "Get row(s) in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5n1ZTwrHvTy8E86N",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "const slaHoursMap = { 'Critical': 2, 'High': 8, 'Medium': 24, 'Low': 72 };\nconst now = new Date();\n\nreturn items.map(item => {\n  const t = item.json;\n  const slaHours = slaHoursMap[t.Priority] || 24;\n  const created = new Date(t['Created Date']);\n  const deadline = new Date(created.getTime() + slaHours * 60 * 60 * 1000);\n  const hoursRemaining = (deadline - now) / (1000 * 60 * 60);\n\n  let slaStatus = 'ضمن الوقت';\n  if (hoursRemaining <= 0) slaStatus = 'تم التجاوز';\n  else if (hoursRemaining <= slaHours * 0.2) slaStatus = 'قريب من التجاوز';\n\n  return { json: { ...t, slaHours, hoursRemaining: hoursRemaining.toFixed(1), slaStatus } };\n}).filter(i => i.json.slaStatus !== 'ضمن الوقت');"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        448,
+        0
+      ],
+      "id": "ecf83fe8-ef0e-4d3a-94f1-f0abf5ecf3bf",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "9bd1758a-be3f-4419-9a69-0e7ced53af78",
+              "leftValue": "={{ $json.slaStatus }}",
+              "rightValue": "تم التجاوز",
+              "operator": {
+                "type": "string",
+                "operation": "equals"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        672,
+        0
+      ],
+      "id": "88bd016c-5b81-4cea-b5f1-bd1f2fc89725",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "chatId": "1120179307",
+        "text": "=🚨 تجاوز SLA فعلي! التذكرة #{{ $json['Ticket'] }} ({{ $json.Priority }})  متجاوز بـ {{ Math.abs($json.hoursRemaining) }} ساعة. يحتاج تصعيد فوري.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        896,
+        -96
+      ],
+      "id": "85879e51-0427-485c-b0b3-248d47c7bf7e",
+      "name": "Send a text message",
+      "webhookId": "15727892-a07f-4944-a77d-85845c1a3e69",
+      "credentials": {
+        "telegramApi": {
+          "id": "8XXAIGIrYUutGL4l",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1FetLNFVpy8WqsK9eZ3P5wsb9w1suX-zW-rpPFChc_yA",
+          "mode": "list",
+          "cachedResultName": "SLA Log",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FetLNFVpy8WqsK9eZ3P5wsb9w1suX-zW-rpPFChc_yA/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "الورقة1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1FetLNFVpy8WqsK9eZ3P5wsb9w1suX-zW-rpPFChc_yA/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ticket": "={{ $('Code in JavaScript').item.json.Ticket }}",
+            "priority": "={{ $('Code in JavaScript').item.json.Priority }}",
+            "slaStatus": "={{ $('Code in JavaScript').item.json.slaStatus }}",
+            "hoursRemaining": "={{ $('Code in JavaScript').item.json.hoursRemaining }}",
+            "checkedAt": "={{ $('Code in JavaScript').item.json['Created Date'] }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "ticket",
+              "displayName": "ticket",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "priority",
+              "displayName": "priority",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "slaStatus",
+              "displayName": "slaStatus",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "hoursRemaining",
+              "displayName": "hoursRemaining",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "checkedAt",
+              "displayName": "checkedAt",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1120,
+        0
+      ],
+      "id": "a3fe22b5-8081-4e8b-9212-dfd109b1b7e3",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "5n1ZTwrHvTy8E86N",
+          "name": "Google Sheets account 2"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "chatId": "1120179307",
+        "text": "=⚠️ تحذير: التذكرة #{{ $json['Ticket'] }} ({{ $json.Priority }}) قريبة من تجاوز SLA — باقي {{ $json.hoursRemaining }} ساعة فقط.",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        896,
+        96
+      ],
+      "id": "c59cee2f-f642-4a6d-94c4-ada74ba465af",
+      "name": "Send a text message1",
+      "webhookId": "4c0f9e69-efc1-4176-bb75-a039387c5566",
+      "credentials": {
+        "telegramApi": {
+          "id": "8XXAIGIrYUutGL4l",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get row(s) in sheet": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Send a text message",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Send a text message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a text message1": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "0bb72c97-5643-46bd-b6e3-9f3a454b65d0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a5a684b75324e6d2c88eba78c40965ea385652d197518547fda9971ebd20d242"
+  },
+  "nodeGroups": [],
+  "id": "zqOnWLBMFSm6xZZN",
+  "tags": []
+}
